@@ -1,0 +1,19 @@
+{
+  "name": "backend-with-coffee",
+  "version": "1.0.0",
+  "description": "Fun project for practicing backend",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [
+    "backend",
+    "coffee"
+  ],
+  "author": "Harsh Sharma",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}
