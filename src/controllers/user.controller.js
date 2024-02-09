@@ -153,4 +153,36 @@ const loginUser = asyncHandler(async function (req, res) {
     )
 })
 
-export { registerUser, loginUser }
+const logoutUser = asyncHandler(async function (req, res) {
+  //
+  //  PROCESS:
+
+  //  1. Unset refresh token from user doc
+  //  2. Clear access and refresh token from cookies
+
+  const user = req.user // user field set by middleware
+
+  await User.findByIdAndUpdate(
+    user._id,
+    {
+      $unset: {
+        refreshToken: 1, // this removes the field from document
+      },
+    },
+    {
+      new: true,
+    }
+  )
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  }
+
+  return res
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json(new ApiResponse(200, "Successfully logged out"))
+})
+
+export { registerUser, loginUser, logoutUser }
