@@ -16,6 +16,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
     return { accessToken, refreshToken }
   } catch (error) {
+    console.log(error)
     throw new ApiError(
       500,
       "Something went wrong while generating access and refresh tokens"
@@ -116,7 +117,7 @@ const loginUser = asyncHandler(async function (req, res) {
     throw new ApiError(400, "User not found")
   }
 
-  const passwordCorrect = await User.isPasswordCorrect(password)
+  const passwordCorrect = await user.isPasswordCorrect(password)
 
   if (!passwordCorrect) {
     throw new ApiError(400, "Password incorrect")
@@ -131,7 +132,9 @@ const loginUser = asyncHandler(async function (req, res) {
     user._id
   )
 
-  const loggedInUser = User.findById(user._id).select("-password -refreshToken")
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  )
 
   return res
     .status(200)
@@ -150,4 +153,4 @@ const loginUser = asyncHandler(async function (req, res) {
     )
 })
 
-export { registerUser }
+export { registerUser, loginUser }
