@@ -34,6 +34,6 @@ router.route("/refresh-token").post(refreshAccessToken)
 router.route("/reset-password").post(verifyJWT, changeCurrentPasssword)
 router.route("/current-user").get(verifyJWT, getCurrentUser)
 router.route("/current-user").get(verifyJWT, getCurrentUser)
-router.route("/c/:userName").get(verifyJWT, getChannelProfile)
+router.route("/channel/:userName").get(verifyJWT, getChannelProfile)
 
 export default router
