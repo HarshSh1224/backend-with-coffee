@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/api_response.js"
 import jwt from "jsonwebtoken"
+import { verifyJWT } from "../middlewares/auth.middleware.js"
 
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
@@ -241,4 +242,37 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 })
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken }
+const changeCurrentPasssword = asyncHandler(async (req, res) => {
+  //
+  // PROCESS:
+
+  // 1. Authenticate user (verifyJWT)
+  // 2. Accept old and new password
+  // 3. save new password
+
+  const user = await User.findById(req.user?._id)
+  const { oldPassword, newPassword } = req.body
+
+  if (!oldPassword || !newPassword) {
+    throw new ApiError(400, "All Fields are required")
+  }
+
+  const passwordCorrect = await user.isPasswordCorrect(oldPassword)
+
+  if (!passwordCorrect) {
+    throw new ApiError(400, "Password incorrect")
+  }
+
+  user.password = newPassword
+  await user.save({ validateBeforeSave: false })
+
+  res.json(new ApiResponse(200, "Password changed successfully"))
+})
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPasssword,
+}
