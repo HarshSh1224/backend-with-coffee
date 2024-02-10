@@ -269,10 +269,81 @@ const changeCurrentPasssword = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, "Password changed successfully"))
 })
 
+const getCurrentUser = asyncHandler(async (req, res) => {
+  res.json(new ApiResponse(200, req.user))
+})
+
+// Similarly we can write updateAccountDetails, updateUserAvatar, updateUserCoverImage controllers
+
+// Functions involving aggregate pipelines
+
+const getChannelProfile = asyncHandler(async (req, res) => {
+  const { userName } = req.params
+
+  if (!userName?.trim()) {
+    throw new ApiError(404, "Username missing")
+  }
+
+  const channel = await User.aggregate([
+    {
+      $match: {
+        userName: userName.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscibedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: "$subscribers",
+        },
+        channelsSubscribedCount: {
+          $size: "$subscribedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            $if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            $then: true,
+            $else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        subscribersCount: 1,
+        channelsSubscribedToCount: 1,
+        isSubscribed: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1,
+      },
+    },
+  ])
+})
+
 export {
   registerUser,
   loginUser,
   logoutUser,
   refreshAccessToken,
   changeCurrentPasssword,
+  getCurrentUser,
+  getChannelProfile,
 }
