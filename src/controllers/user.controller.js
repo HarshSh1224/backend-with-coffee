@@ -280,62 +280,75 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 const getChannelProfile = asyncHandler(async (req, res) => {
   const { userName } = req.params
 
-  if (!userName?.trim()) {
-    throw new ApiError(404, "Username missing")
-  }
+  try {
+    if (!userName?.trim()) {
+      throw new ApiError(404, "Username missing")
+    }
 
-  const channel = await User.aggregate([
-    {
-      $match: {
-        userName: userName.toLowerCase(),
-      },
-    },
-    {
-      $lookup: {
-        from: "subscriptions",
-        localField: "_id",
-        foreignField: "channel",
-        as: "subscribers",
-      },
-    },
-    {
-      $lookup: {
-        from: "subscriptions",
-        localField: "_id",
-        foreignField: "subscriber",
-        as: "subscibedTo",
-      },
-    },
-    {
-      $addFields: {
-        subscribersCount: {
-          $size: "$subscribers",
+    const channel = await User.aggregate([
+      {
+        $match: {
+          userName: userName.toLowerCase(),
         },
-        channelsSubscribedCount: {
-          $size: "$subscribedTo",
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers",
         },
-        isSubscribed: {
-          $cond: {
-            $if: { $in: [req.user?._id, "$subscribers.subscriber"] },
-            $then: true,
-            $else: false,
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscribedTo",
+        },
+      },
+      {
+        $addFields: {
+          subscribersCount: {
+            $size: "$subscribers",
+          },
+          channelsSubscribedCount: {
+            $size: "$subscribedTo",
+          },
+          isSubscribed: {
+            $cond: {
+              if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+              then: true,
+              else: false,
+            },
           },
         },
       },
-    },
-    {
-      $project: {
-        fullName: 1,
-        username: 1,
-        subscribersCount: 1,
-        channelsSubscribedToCount: 1,
-        isSubscribed: 1,
-        avatar: 1,
-        coverImage: 1,
-        email: 1,
+      {
+        $project: {
+          fullName: 1,
+          userName: 1,
+          subscribersCount: 1,
+          channelsSubscribedCount: 1,
+          isSubscribed: 1,
+          avatar: 1,
+          coverImage: 1,
+          email: 1,
+        },
       },
-    },
-  ])
+    ])
+
+    if (!channel?.length) {
+      throw new ApiError(404, "Channel does not exist")
+    }
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, channel[0], "Channel fetched successfully"))
+  } catch (error) {
+    console.log(error)
+    throw new ApiError(500, "Server Internal error")
+  }
 })
 
 export {
